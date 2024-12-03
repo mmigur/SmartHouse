@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smart_house/create_pin_code_screen.dart';
 import 'home_screen.dart'; // Импортируем HomeScreen
 
 class AddressScreen extends StatefulWidget {
@@ -21,7 +22,7 @@ class _AddressScreenState extends State<AddressScreen> {
     if (_formKey.currentState!.validate()) {
       // Переход на HomeScreen
       Navigator.of(context).push(
-        MaterialPageRoute(builder: (context) => HomeScreen()),
+        MaterialPageRoute(builder: (context) => CreatePinScreen()),
       );
     }
   }

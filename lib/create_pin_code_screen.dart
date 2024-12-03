@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smart_house/home_screen.dart';
 import 'pin_code_screen.dart'; // Импортируем PinCodeScreen
 
 class CreatePinScreen extends StatefulWidget {
@@ -21,7 +22,7 @@ class _CreatePinScreenState extends State<CreatePinScreen> {
       if (_pinController.text.length == 4) {
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) => PinCodeScreen(),
+            builder: (context) => HomeScreen(),
           ),
         );
       }
@@ -67,6 +68,13 @@ class _CreatePinScreenState extends State<CreatePinScreen> {
                   'assets/auth_logo.png',
                   height: 200,
                 ),
+                const Text(
+                  'Создание PinCode',
+                  style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold
+                  ),
+                ),
                 SizedBox(height: 24.0),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -96,7 +104,7 @@ class _CreatePinScreenState extends State<CreatePinScreen> {
                     childAspectRatio: 1.5, // Уменьшаем размер кнопок
                     mainAxisSpacing: 8.0, // Добавляем отступы между кнопками
                     crossAxisSpacing: 8.0, // Добавляем отступы между кнопками
-                    children: List.generate(10, (index) {
+                    children: List.generate(9, (index) {
                       return _buildNumberButton((index + 1) % 10 == 0 ? '0' : (index + 1).toString());
                     }),
                   ),

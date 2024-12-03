@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:smart_house/sign_in_screen.dart';
+import 'address_screen.dart';
 import 'create_pin_code_screen.dart'; // Импортируем PinCodeScreen
+import 'package:smart_house/models/models.dart'; // Импортируем модель пользователя
+import 'package:smart_house/server/server.dart'; // Импортируем сервис для работы с Supabase
 
 class RegistrationScreen extends StatefulWidget {
   @override
@@ -15,6 +18,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   String _email = '';
   String _password = '';
 
+  final SupabaseService _supabaseService = SupabaseService();
+
   bool _isValidEmail(String email) {
     final emailRegex = RegExp(r'^[a-z0-9]+(\.[a-z0-9]+)*@[a-z0-9]+(\.[a-z0-9]+)+$');
     return emailRegex.hasMatch(email);
@@ -25,12 +30,30 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     return passwordRegex.hasMatch(password);
   }
 
-  void _submitForm() {
+  void _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      // Переход на экран ввода пин-кода
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (context) => CreatePinScreen()),
+      final user = User(
+        username: _username,
+        email: _email,
+        password: _password,
       );
+
+      bool registrationSuccess = await _supabaseService.registerUser(user);
+
+      if (registrationSuccess) {
+        // Переход на экран ввода пин-кода
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => AddressScreen()),
+        );
+      } else {
+        // Показ всплывающего сообщения об ошибке
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка регистрации. Пожалуйста, попробуйте снова.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -41,7 +64,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         children: [
           // Фон
           Container(
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               image: DecorationImage(
                 image: AssetImage('assets/background.png'),
                 fit: BoxFit.cover,
@@ -65,7 +88,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     SizedBox(height: 20),
                     Container(
                       decoration: BoxDecoration(
-                          color: Color(0xFF63D1E4).withOpacity(0.5),
+                        color: Color(0xFF63D1E4).withOpacity(0.5),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       padding: EdgeInsets.all(12),
@@ -79,7 +102,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                               borderRadius: BorderRadius.circular(8.0),
                             ),
                             child: TextFormField(
-                              decoration: InputDecoration(
+                              decoration: const InputDecoration(
                                 labelText: 'Имя пользователя',
                                 labelStyle: TextStyle(color: Colors.black),
                                 enabledBorder: UnderlineInputBorder(
@@ -101,14 +124,14 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                               },
                             ),
                           ),
-                          SizedBox(height: 20),
+                          const SizedBox(height: 20),
                           Container(
                             decoration: BoxDecoration(
                               color: Colors.white.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(8.0),
                             ),
                             child: TextFormField(
-                              decoration: InputDecoration( // Исправлено здесь
+                              decoration: const InputDecoration( // Исправлено здесь
                                 labelText: 'Почта',
                                 labelStyle: TextStyle(color: Colors.black),
                                 enabledBorder: UnderlineInputBorder(
@@ -132,7 +155,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                               },
                             ),
                           ),
-                          SizedBox(height: 20),
+                          const SizedBox(height: 20),
                           Container(
                             decoration: BoxDecoration(
                               color: Colors.white.withOpacity(0.1),
@@ -144,10 +167,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                               decoration: InputDecoration(
                                 labelText: 'Пароль',
                                 labelStyle: TextStyle(color: Colors.black),
-                                enabledBorder: UnderlineInputBorder(
+                                enabledBorder: const UnderlineInputBorder(
                                   borderSide: BorderSide(color: Colors.black),
                                 ),
-                                focusedBorder: UnderlineInputBorder(
+                                focusedBorder: const UnderlineInputBorder(
                                   borderSide: BorderSide(color: Colors.black),
                                 ),
                                 suffixIcon: IconButton(
@@ -179,7 +202,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                         ],
                       ),
                     ),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.1),
@@ -194,15 +217,15 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                             primary: Colors.black,
                             onPrimary: Colors.white,
                           ),
-                          child: Text('Зарегистрироваться'),
+                          child: const Text('Зарегистрироваться'),
                         ),
                       ),
                     ),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
+                        const Text(
                           'Уже есть аккаунт? ',
                           style: TextStyle(color: Colors.white),
                         ),
@@ -212,7 +235,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                               MaterialPageRoute(builder: (context) => SignInScreen()),
                             );
                           },
-                          child: Text(
+                          child: const Text(
                             'Войти',
                             style: TextStyle(color: Colors.black),
                           ),

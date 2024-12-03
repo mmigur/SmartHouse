@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:smart_house/create_pin_code_screen.dart';
+import 'package:smart_house/pin_code_screen.dart';
 import 'package:smart_house/registration_screen.dart';
 import 'address_screen.dart'; // Импортируем AddressScreen
+import 'package:smart_house/server/server.dart'; // Импортируем сервис для работы с Supabase
 
 class SignInScreen extends StatefulWidget {
   @override
@@ -14,6 +17,8 @@ class _SignInScreenState extends State<SignInScreen> {
   String _email = '';
   String _password = '';
 
+  final SupabaseService _supabaseService = SupabaseService();
+
   bool _isValidEmail(String email) {
     final emailRegex = RegExp(r'^[a-z0-9]+(\.[a-z0-9]+)*@[a-z0-9]+(\.[a-z0-9]+)+$');
     return emailRegex.hasMatch(email);
@@ -24,12 +29,24 @@ class _SignInScreenState extends State<SignInScreen> {
     return passwordRegex.hasMatch(password);
   }
 
-  void _submitForm() {
+  Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      // Переход на экран AddressScreen
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (context) => AddressScreen()),
-      );
+      bool loginSuccess = await _supabaseService.loginUser(_email, _password);
+
+      if (loginSuccess) {
+        // Переход на экран AddressScreen
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => PinCodeScreen()),
+        );
+      } else {
+        // Показ всплывающего сообщения об ошибке
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Пользователь не найден или неправильный пароль. Пожалуйста, зарегистрируйтесь или попробуйте снова.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 

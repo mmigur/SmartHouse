@@ -96,7 +96,7 @@ class _PinCodeScreenState extends State<PinCodeScreen> {
                     childAspectRatio: 1.5, // Уменьшаем размер кнопок
                     mainAxisSpacing: 8.0, // Добавляем отступы между кнопками
                     crossAxisSpacing: 8.0, // Добавляем отступы между кнопками
-                    children: List.generate(10, (index) {
+                    children: List.generate(9, (index) {
                       return _buildNumberButton((index + 1) % 10 == 0 ? '0' : (index + 1).toString());
                     }),
                   ),
