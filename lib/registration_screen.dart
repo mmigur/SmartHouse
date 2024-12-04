@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:smart_house/sign_in_screen.dart';
-import 'address_screen.dart';
-import 'create_pin_code_screen.dart'; // Импортируем PinCodeScreen
-import 'package:smart_house/models/models.dart'; // Импортируем модель пользователя
-import 'package:smart_house/server/server.dart'; // Импортируем сервис для работы с Supabase
+import 'package:smart_house/address_screen.dart';
+import 'package:smart_house/models/models.dart' as smart_house_models;
+import 'package:smart_house/server/server.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class RegistrationScreen extends StatefulWidget {
   @override
@@ -32,18 +32,18 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
   void _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      final user = User(
+      final user = smart_house_models.User(
         username: _username,
         email: _email,
         password: _password,
       );
 
-      bool registrationSuccess = await _supabaseService.registerUser(user);
+      String? userId = await _supabaseService.registerUser(user);
 
-      if (registrationSuccess) {
-        // Переход на экран ввода пин-кода
+      if (userId != null) {
+        // Переход на экран ввода адреса с передачей ID пользователя
         Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => AddressScreen()),
+          MaterialPageRoute(builder: (context) => AddressScreen(userId: userId)),
         );
       } else {
         // Показ всплывающего сообщения об ошибке

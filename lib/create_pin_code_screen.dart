@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:smart_house/home_screen.dart';
-import 'pin_code_screen.dart'; // Импортируем PinCodeScreen
+import 'package:shared_preferences/shared_preferences.dart';
+import 'home_screen.dart'; // Импортируем HomeScreen
 
 class CreatePinScreen extends StatefulWidget {
   @override
@@ -11,16 +11,19 @@ class _CreatePinScreenState extends State<CreatePinScreen> {
   final _pinController = TextEditingController();
   List<bool> _pinFilled = [false, false, false, false];
 
-  void _onNumberPressed(String number) {
+  void _onNumberPressed(String number) async {
     if (_pinController.text.length < 4) {
       setState(() {
         _pinController.text += number;
         _pinFilled[_pinController.text.length - 1] = true;
       });
 
-      // Переход на экран PinCodeScreen после ввода 4 цифр
+      // Переход на экран HomeScreen после ввода 4 цифр
       if (_pinController.text.length == 4) {
-        Navigator.of(context).push(
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('pin_code', _pinController.text);
+
+        Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (context) => HomeScreen(),
           ),

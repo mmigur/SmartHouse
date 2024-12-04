@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:smart_house/create_pin_code_screen.dart';
-import 'home_screen.dart'; // Импортируем HomeScreen
+import 'package:smart_house/server/server.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AddressScreen extends StatefulWidget {
+  final String userId;
+
+  AddressScreen({required this.userId});
+
   @override
   _AddressScreenState createState() => _AddressScreenState();
 }
@@ -10,6 +15,7 @@ class AddressScreen extends StatefulWidget {
 class _AddressScreenState extends State<AddressScreen> {
   final _formKey = GlobalKey<FormState>();
   String _address = '';
+  final SupabaseService _supabaseService = SupabaseService();
 
   bool _isValidAddress(String address) {
     // Паттерн для проверки адреса
@@ -18,12 +24,24 @@ class _AddressScreenState extends State<AddressScreen> {
     return addressPattern.hasMatch(address);
   }
 
-  void _submitForm() {
+  void _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      // Переход на HomeScreen
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (context) => CreatePinScreen()),
-      );
+      final houseId = await _supabaseService.addHouse(_address);
+
+      if (houseId != null) {
+        await _supabaseService.updateProfileWithHouseId(widget.userId, houseId);
+        // Переход на CreatePinScreen
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => CreatePinScreen()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка сохранения адреса. Пожалуйста, попробуйте снова.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
