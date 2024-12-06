@@ -35,7 +35,7 @@ class _SignInScreenState extends State<SignInScreen> {
       if (user != null) {
         // Переход на экран PinCodeScreen
         Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => PinCodeScreen(userId: user.id)),
+          MaterialPageRoute(builder: (context) => PinCodeScreen(userId: user.id.toString())),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(

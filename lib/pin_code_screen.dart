@@ -35,9 +35,10 @@ class _PinCodeScreenState extends State<PinCodeScreen> {
     final isValid = await _supabaseService.verifyPinCode(widget.userId, pinCode);
 
     if (isValid) {
+      final address = await _supabaseService.getAddress(widget.userId);
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (context) => HomeScreen(),
+          builder: (context) => HomeScreen(userId: widget.userId, address: address),
         ),
       );
     } else {

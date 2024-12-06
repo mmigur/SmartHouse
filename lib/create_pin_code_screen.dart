@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'home_screen.dart'; // Импортируем HomeScreen
+import 'package:smart_house/home_screen.dart'; // Импортируем HomeScreen
 import 'package:smart_house/server/server.dart'; // Импортируем SupabaseService
 
 class CreatePinScreen extends StatefulWidget {
@@ -30,9 +29,10 @@ class _CreatePinScreenState extends State<CreatePinScreen> {
         final success = await _supabaseService.savePinCode(widget.userId, pinCode);
 
         if (success) {
+          final address = await _supabaseService.getAddress(widget.userId);
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
-              builder: (context) => HomeScreen(),
+              builder: (context) => HomeScreen(userId: widget.userId, address: address),
             ),
           );
         } else {

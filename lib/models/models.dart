@@ -1,5 +1,5 @@
 class User {
-  final int? id;
+  final String? id;
   final String username;
   final String email;
   final String password;
@@ -21,4 +21,19 @@ class User {
       'pin_code': pinCode, // Добавляем поле для PIN-кода
     };
   }
+}
+
+class Room {
+  final String name;
+  final String imageUrl;
+
+  Room({required this.name, required this.imageUrl});
+}
+
+class RoomType {
+  final String id;
+  final String name;
+  final String imageUrl;
+
+  RoomType({required this.id, required this.name, required this.imageUrl});
 }
