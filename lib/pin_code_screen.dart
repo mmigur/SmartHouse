@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:smart_house/home_screen.dart'; // Импортируем HomeScreen
+import 'package:smart_house/server/server.dart'; // Импортируем SupabaseService
 
 class PinCodeScreen extends StatefulWidget {
+  final String userId; // Добавляем userId для проверки PIN-кода
+
+  PinCodeScreen({required this.userId});
+
   @override
   _PinCodeScreenState createState() => _PinCodeScreenState();
 }
@@ -8,6 +14,7 @@ class PinCodeScreen extends StatefulWidget {
 class _PinCodeScreenState extends State<PinCodeScreen> {
   final _pinController = TextEditingController();
   List<bool> _pinFilled = [false, false, false, false];
+  final SupabaseService _supabaseService = SupabaseService();
 
   void _onNumberPressed(String number) {
     if (_pinController.text.length < 4) {
@@ -15,16 +22,44 @@ class _PinCodeScreenState extends State<PinCodeScreen> {
         _pinController.text += number;
         _pinFilled[_pinController.text.length - 1] = true;
       });
+
+      // Проверка PIN-кода после ввода 4 цифр
+      if (_pinController.text.length == 4) {
+        final pinCode = int.parse(_pinController.text);
+        _verifyPinCode(pinCode);
+      }
     }
   }
 
-  void _onExitPressed() {
-    // Очищаем контроллер и состояние пин-кода
-    _pinController.clear();
+  void _verifyPinCode(int pinCode) async {
+    final isValid = await _supabaseService.verifyPinCode(widget.userId, pinCode);
+
+    if (isValid) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => HomeScreen(),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Неверный PIN-код. Пожалуйста, попробуйте снова.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      _clearPin();
+    }
+  }
+
+  void _clearPin() {
     setState(() {
+      _pinController.clear();
       _pinFilled = [false, false, false, false];
     });
-    // Переход на предыдущий экран
+  }
+
+  void _onExitPressed() {
+    _clearPin();
     Navigator.of(context).pop();
   }
 

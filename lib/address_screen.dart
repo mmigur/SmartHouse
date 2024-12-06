@@ -32,7 +32,7 @@ class _AddressScreenState extends State<AddressScreen> {
         await _supabaseService.updateProfileWithHouseId(widget.userId, houseId);
         // Переход на CreatePinScreen
         Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => CreatePinScreen()),
+          MaterialPageRoute(builder: (context) => CreatePinScreen(userId: widget.userId)),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(

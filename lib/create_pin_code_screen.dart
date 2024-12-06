@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'home_screen.dart'; // Импортируем HomeScreen
+import 'package:smart_house/server/server.dart'; // Импортируем SupabaseService
 
 class CreatePinScreen extends StatefulWidget {
+  final String userId; // Добавляем userId для сохранения PIN-кода
+
+  CreatePinScreen({required this.userId});
+
   @override
   _CreatePinScreenState createState() => _CreatePinScreenState();
 }
@@ -10,6 +15,7 @@ class CreatePinScreen extends StatefulWidget {
 class _CreatePinScreenState extends State<CreatePinScreen> {
   final _pinController = TextEditingController();
   List<bool> _pinFilled = [false, false, false, false];
+  final SupabaseService _supabaseService = SupabaseService();
 
   void _onNumberPressed(String number) async {
     if (_pinController.text.length < 4) {
@@ -20,14 +26,23 @@ class _CreatePinScreenState extends State<CreatePinScreen> {
 
       // Переход на экран HomeScreen после ввода 4 цифр
       if (_pinController.text.length == 4) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('pin_code', _pinController.text);
+        final pinCode = int.parse(_pinController.text);
+        final success = await _supabaseService.savePinCode(widget.userId, pinCode);
 
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => HomeScreen(),
-          ),
-        );
+        if (success) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => HomeScreen(),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Ошибка сохранения PIN-кода. Пожалуйста, попробуйте снова.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     }
   }
