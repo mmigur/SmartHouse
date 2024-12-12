@@ -1,5 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:smart_house/models/models.dart' as smart_house_models; // Используем псевдоним для избежания конфликта
+import 'package:smart_house/models/models.dart' as smart_house_models;
+import 'package:gotrue/src/types/user.dart' as gotrue_user; // Переименовываем импорт
+import '../models/models.dart'; // Импортируем ваши модели
 
 class SupabaseService {
   final SupabaseClient _supabaseClient = Supabase.instance.client;
@@ -19,7 +21,7 @@ class SupabaseService {
           {
             'id': userId,
             'username': user.username,
-            'pin_code': user.pinCode, // Сохраняем PIN-код
+            'pin_code': user.pinCode,
           },
         ]);
 
@@ -43,7 +45,7 @@ class SupabaseService {
         password: password,
       );
       final Session? session = res.session;
-      final User? user = res.user;
+      final gotrue_user.User? user = res.user;
 
       if (user != null) {
         print('User logged in: $user');
@@ -51,7 +53,7 @@ class SupabaseService {
           id: user.id,
           username: user.userMetadata?['username'] ?? '',
           email: user.email ?? '',
-          password: '', // Пароль не возвращаем
+          password: '',
           pinCode: user.userMetadata?['pin_code'],
         );
       } else {
@@ -160,7 +162,7 @@ class SupabaseService {
           .select('name, type_id, house_id')
           .eq('house_id', houseId);
 
-      print('Rooms response: $response'); // Добавляем отладочное сообщение
+      print('Rooms response: $response');
 
       final List<smart_house_models.Room> rooms = [];
       for (var room in response) {
@@ -174,6 +176,7 @@ class SupabaseService {
         rooms.add(smart_house_models.Room(
           name: room['name'],
           imageUrl: imageUrl,
+          houseId: houseId,
         ));
       }
 
@@ -187,7 +190,6 @@ class SupabaseService {
   // Добавление комнаты
   Future<void> addRoom(String userId, String roomName, String typeId) async {
     try {
-      // Получаем house_id пользователя
       final profileResponse = await _supabaseClient.from('profiles')
           .select('house_id')
           .eq('id', userId)
@@ -196,7 +198,6 @@ class SupabaseService {
       final houseId = profileResponse['house_id'];
 
       if (houseId != null) {
-        // Добавляем комнату в таблицу room
         final roomResponse = await _supabaseClient.from('room').insert([
           {
             'name': roomName,
@@ -208,7 +209,6 @@ class SupabaseService {
         if (roomResponse.isNotEmpty) {
           final roomId = roomResponse[0]['id'];
 
-          // Обновляем таблицу house, добавляя room_id
           await _supabaseClient.from('house').update({
             'room_id': roomId,
           }).eq('id', houseId).execute();
@@ -224,7 +224,6 @@ class SupabaseService {
   // Удаление комнаты
   Future<void> deleteRoom(String userId, String roomName) async {
     try {
-      // Получаем house_id пользователя
       final profileResponse = await _supabaseClient.from('profiles')
           .select('house_id')
           .eq('id', userId)
@@ -233,7 +232,6 @@ class SupabaseService {
       final houseId = profileResponse['house_id'];
 
       if (houseId != null) {
-        // Удаляем комнату из таблицы room
         await _supabaseClient.from('room')
             .delete()
             .eq('house_id', houseId)
@@ -258,7 +256,7 @@ class SupabaseService {
         roomTypes.add(smart_house_models.RoomType(
           id: type['id'],
           name: type['name'],
-          imageUrl: imageUrl,
+          image: imageUrl,
         ));
       }
 
@@ -288,6 +286,214 @@ class SupabaseService {
     } catch (e) {
       print('Error getting address: $e');
       return '';
+    }
+  }
+
+  // Получение списка устройств
+  Future<List<smart_house_models.Device>> getDevices(String userId) async {
+    try {
+      final profileResponse = await _supabaseClient.from('profiles')
+          .select('house_id')
+          .eq('id', userId)
+          .single();
+
+      final houseId = profileResponse['house_id'];
+
+      if (houseId == null) {
+        print('Error getting devices: house_id is null');
+        return [];
+      }
+
+      // Получаем комнаты пользователя
+      final roomsResponse = await _supabaseClient.from('room')
+          .select('id')
+          .eq('house_id', houseId);
+
+      final List<int> roomIds = roomsResponse.map((room) => room['id'] as int).toList();
+
+      // Получаем устройства, связанные с комнатами
+      final response = await _supabaseClient.from('device')
+          .select('id, name, custom_id, type_id, is_on, room_id')
+          .in_('room_id', roomIds);
+
+      final List<smart_house_models.Device> devices = [];
+      for (var device in response) {
+        final typeResponse = await _supabaseClient.from('type_device')
+            .select('name, image')
+            .eq('id', device['type_id'])
+            .single();
+
+        final imageUrl = _supabaseClient.storage.from('images').getPublicUrl(typeResponse['image']);
+
+        devices.add(smart_house_models.Device(
+          id: device['id'],
+          name: device['name'],
+          customId: device['custom_id'],
+          imageUrl: imageUrl,
+          isOn: device['is_on'],
+          roomId: device['room_id']
+        ));
+      }
+
+      return devices;
+    } catch (e) {
+      print('Error getting devices: $e');
+      return [];
+    }
+  }
+
+  // Добавление устройства
+  Future<void> addDevice(String userId, String name, String customId, String typeId) async {
+    try {
+      final profileResponse = await _supabaseClient.from('profiles')
+          .select('house_id')
+          .eq('id', userId)
+          .single();
+
+      final houseId = profileResponse['house_id'];
+
+      if (houseId != null) {
+        // Получаем комнаты пользователя
+        final roomsResponse = await _supabaseClient.from('room')
+            .select('id')
+            .eq('house_id', houseId);
+
+        if (roomsResponse.isEmpty) {
+          print('Error adding device: no rooms found for user');
+          return;
+        }
+
+        final roomId = roomsResponse[0]['id']; // Используем первую комнату
+
+        await _supabaseClient.from('device').insert([
+          {
+            'name': name,
+            'custom_id': customId,
+            'type_id': typeId,
+            'room_id': roomId,
+            'is_on': false,
+          },
+        ]);
+      } else {
+        print('Error adding device: house_id is null');
+      }
+    } catch (e) {
+      print('Error adding device: $e');
+    }
+  }
+
+  // Обновление статуса устройства
+  Future<void> updateDeviceStatus(String deviceId, bool isOn) async {
+    try {
+      await _supabaseClient.from('device').update({
+        'is_on': isOn,
+      }).eq('id', deviceId).execute();
+    } catch (e) {
+      print('Error updating device status: $e');
+    }
+  }
+
+  // Получение типов устройств
+  Future<List<smart_house_models.RoomType>> getDeviceTypes() async {
+    try {
+      final response = await _supabaseClient.from('type_device').select('id, name, image');
+
+      final List<smart_house_models.RoomType> deviceTypes = [];
+      for (var type in response) {
+        final imageUrl = _supabaseClient.storage.from('images').getPublicUrl(type['image']);
+
+        deviceTypes.add(smart_house_models.RoomType(
+          id: type['id'].toString(),
+          name: type['name'],
+          image: imageUrl,
+        ));
+      }
+
+      return deviceTypes;
+    } catch (e) {
+      print('Error getting device types: $e');
+      return [];
+    }
+  }
+
+  // Метод для загрузки устройств по адресу дома
+  Future<List<Map<String, dynamic>>> loadDevicesByHouse(String address) async {
+    try {
+      // Получаем house_id по адресу
+      final houseResponse = await _supabaseClient.from('house')
+          .select('id')
+          .eq('address', address)
+          .single();
+
+      final houseId = houseResponse['id'];
+
+      // Получаем устройства, связанные с этим house_id
+      final devicesResponse = await _supabaseClient.from('device')
+          .select('id, name, is_on, type_id, room_id')
+          .eq('house_id', houseId);
+
+      final List<Map<String, dynamic>> devices = [];
+      for (var device in devicesResponse) {
+        final typeResponse = await _supabaseClient.from('type_device')
+            .select('name, image')
+            .eq('id', device['type_id'])
+            .single();
+
+        final imageUrl = _supabaseClient.storage.from('images').getPublicUrl(typeResponse['image']);
+
+        devices.add({
+          'id': device['id'],
+          'name': device['name'],
+          'imageUrl': imageUrl,
+          'isOn': device['is_on'],
+          'room_id': device['room_id'],
+        });
+      }
+
+      return devices;
+    } catch (e) {
+      print('Error loading devices by house: $e');
+      return [];
+    }
+  }
+
+// Метод для загрузки комнат по адресу дома
+  Future<List<Room>> getRoomsByAddress(String address) async {
+    try {
+      // Получаем house_id по адресу
+      final houseResponse = await _supabaseClient.from('house')
+          .select('id')
+          .eq('address', address)
+          .single();
+
+      final houseId = houseResponse['id'];
+
+      // Получаем комнаты, связанные с этим house_id
+      final roomsResponse = await _supabaseClient.from('room')
+          .select('id, name, type_id, house_id')
+          .eq('house_id', houseId);
+
+      final List<Room> rooms = [];
+      for (var room in roomsResponse) {
+        final typeResponse = await _supabaseClient.from('type_room')
+            .select('name, image')
+            .eq('id', room['type_id'])
+            .single();
+
+        final imageUrl = _supabaseClient.storage.from('images').getPublicUrl(typeResponse['image']);
+
+        rooms.add(Room(
+          id: room['id'], // Добавляем id
+          name: room['name'],
+          imageUrl: imageUrl,
+          houseId: room['house_id'],
+        ));
+      }
+
+      return rooms;
+    } catch (e) {
+      print('Error loading rooms by address: $e');
+      return [];
     }
   }
 }

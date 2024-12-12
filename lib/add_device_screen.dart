@@ -2,50 +2,54 @@ import 'package:flutter/material.dart';
 import 'package:smart_house/server/server.dart';
 import 'package:smart_house/models/models.dart';
 
-class AddRoomScreen extends StatefulWidget {
+class AddDeviceScreen extends StatefulWidget {
   final String userId;
-  final String address;
 
-  AddRoomScreen({required this.userId, required this.address});
+  AddDeviceScreen({required this.userId});
 
   @override
-  _AddRoomScreenState createState() => _AddRoomScreenState();
+  _AddDeviceScreenState createState() => _AddDeviceScreenState();
 }
 
-class _AddRoomScreenState extends State<AddRoomScreen> {
+class _AddDeviceScreenState extends State<AddDeviceScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _roomNameController = TextEditingController();
-  String _selectedRoomType = '';
+  final _deviceNameController = TextEditingController();
+  final _customIdController = TextEditingController();
+  String _selectedDeviceType = '';
   final SupabaseService _supabaseService = SupabaseService();
-  List<RoomType> _roomTypes = [];
+  List<RoomType> _deviceTypes = [];
 
   @override
   void initState() {
     super.initState();
-    _loadRoomTypes();
+    _loadDeviceTypes();
   }
 
-  Future<void> _loadRoomTypes() async {
-    final roomTypes = await _supabaseService.getRoomTypes();
+  Future<void> _loadDeviceTypes() async {
+    final deviceTypes = await _supabaseService.getDeviceTypes();
     setState(() {
-      _roomTypes = roomTypes;
-      if (_roomTypes.isNotEmpty) {
-        _selectedRoomType = _roomTypes.first.id;
+      _deviceTypes = deviceTypes;
+      if (_deviceTypes.isNotEmpty) {
+        _selectedDeviceType = _deviceTypes.first.id;
       }
     });
   }
 
   void _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      final roomName = _roomNameController.text;
-      await _supabaseService.addRoom(widget.userId, roomName, _selectedRoomType);
-      Navigator.of(context).pop(roomName);
+      final deviceName = _deviceNameController.text;
+      final customId = _customIdController.text;
+      await _supabaseService.addDevice(widget.userId, deviceName, customId, _selectedDeviceType);
+
+      // Возвращаем true, если устройство добавлено успешно
+      Navigator.of(context).pop(true);
     }
   }
 
   @override
   void dispose() {
-    _roomNameController.dispose();
+    _deviceNameController.dispose();
+    _customIdController.dispose();
     super.dispose();
   }
 
@@ -70,7 +74,7 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
           ),
         ),
         title: Text(
-          'Добавить комнату',
+          'Добавить устройство',
           style: TextStyle(color: Colors.white, fontSize: 20),
         ),
       ),
@@ -83,9 +87,9 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
             children: [
               SizedBox(height: 20),
               TextFormField(
-                controller: _roomNameController,
+                controller: _deviceNameController,
                 decoration: InputDecoration(
-                  hintText: 'Название комнаты',
+                  hintText: 'Название устройства',
                   hintStyle: TextStyle(color: Color(0xFF94949B)),
                   border: OutlineInputBorder(
                     borderSide: BorderSide(color: Color(0xFF94949B)),
@@ -95,7 +99,26 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
                 style: TextStyle(color: Color(0xFF94949B)),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Пожалуйста, введите название комнаты';
+                    return 'Пожалуйста, введите название устройства';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 20),
+              TextFormField(
+                controller: _customIdController,
+                decoration: InputDecoration(
+                  hintText: 'Идентификатор устройства',
+                  hintStyle: TextStyle(color: Color(0xFF94949B)),
+                  border: OutlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFF94949B)),
+                  ),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                ),
+                style: TextStyle(color: Color(0xFF94949B)),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Пожалуйста, введите идентификатор устройства';
                   }
                   return null;
                 },
@@ -119,33 +142,33 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
                     mainAxisSpacing: 8.0,
                     crossAxisSpacing: 8.0,
                   ),
-                  itemCount: _roomTypes.length,
+                  itemCount: _deviceTypes.length,
                   itemBuilder: (context, index) {
-                    final roomType = _roomTypes[index];
+                    final deviceType = _deviceTypes[index];
                     return GestureDetector(
                       onTap: () {
                         setState(() {
-                          _selectedRoomType = roomType.id;
+                          _selectedDeviceType = deviceType.id;
                         });
                       },
                       child: Column(
                         children: [
                           Container(
                             decoration: BoxDecoration(
-                              border: _selectedRoomType == roomType.id
+                              border: _selectedDeviceType == deviceType.id
                                   ? Border.all(color: Color(0xFF0B50A0), width: 2)
                                   : null,
                               borderRadius: BorderRadius.circular(8),
                             ),
                             padding: EdgeInsets.all(8),
                             child: Image.network(
-                              roomType.image,
+                              deviceType.image,
                               height: 50,
                               width: 50,
                             ),
                           ),
                           SizedBox(height: 8),
-                          Text(roomType.name),
+                          Text(deviceType.name),
                         ],
                       ),
                     );

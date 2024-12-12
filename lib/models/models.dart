@@ -24,16 +24,44 @@ class User {
 }
 
 class Room {
+  final int? id; // Добавляем id
   final String name;
   final String imageUrl;
+  final String houseId; // Добавляем houseId
 
-  Room({required this.name, required this.imageUrl});
+  Room({
+    this.id, // Добавляем id
+    required this.name,
+    required this.imageUrl,
+    required this.houseId,
+  });
+}
+class Device {
+  final int id;
+  final String name;
+  final String imageUrl;
+  final bool isOn;
+  final int roomId;
+  final String customId; // Добавляем customId
+
+  Device({
+    required this.id,
+    required this.name,
+    required this.imageUrl,
+    required this.isOn,
+    required this.roomId,
+    required this.customId, // Добавляем customId
+  });
 }
 
 class RoomType {
   final String id;
+  final String image;
   final String name;
-  final String imageUrl;
 
-  RoomType({required this.id, required this.name, required this.imageUrl});
+  RoomType({
+    required this.id,
+    required this.image,
+    required this.name,
+  });
 }
